@@ -37,6 +37,8 @@ export class ChePluginServiceClientImpl implements ChePluginServiceClient {
    ********************************************************************************/
 
   protected readonly pluginCachedEvent = new Emitter<number>();
+  protected readonly onInvalidRegistryFoundEmitter = new Emitter<ChePluginRegistry>();
+  readonly onInvalidRegistryFound = this.onInvalidRegistryFoundEmitter.event;
 
   get onPluginCached(): Event<number> {
     return this.pluginCachedEvent.event;
@@ -72,6 +74,7 @@ export class ChePluginServiceClientImpl implements ChePluginServiceClient {
    ********************************************************************************/
 
   async invalidRegistryFound(registry: ChePluginRegistry): Promise<void> {
+    this.onInvalidRegistryFoundEmitter.fire(registry);
     console.log('Unable to read plugin registry', registry.uri);
   }
 

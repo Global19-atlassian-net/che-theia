@@ -16,16 +16,18 @@ import {
   ChePluginService,
 } from '../../common/che-plugin-protocol';
 import { Emitter, Event, MessageService } from '@theia/core/lib/common';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser/preferences';
-import { inject, injectable } from 'inversify';
+import { PreferenceChange, PreferenceScope, PreferenceService } from '@theia/core/lib/browser/preferences';
+import { inject, injectable, postConstruct } from 'inversify';
 
 import { ChePluginFrontentService } from './che-plugin-frontend-service';
 import { ChePluginPreferences } from './che-plugin-preferences';
+import { ChePluginServiceClientImpl } from './che-plugin-service-client';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginFilter } from '../../common/plugin/plugin-filter';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { WorkspaceService } from '@eclipse-che/theia-remote-api/lib/common/workspace-service';
+import debounce = require('lodash.debounce');
 
 @injectable()
 export class ChePluginManager {
@@ -38,6 +40,8 @@ export class ChePluginManager {
    * Registry list
    */
   private registryList: ChePluginRegistry[];
+
+  private uriPattern = /https?:\/\/(www\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)[-a-zA-Z0-9/]*/g;
 
   /**
    * List of installed plugins.
@@ -68,6 +72,29 @@ export class ChePluginManager {
 
   @inject(WorkspaceService)
   protected readonly workspaceService: WorkspaceService;
+
+  @inject(ChePluginServiceClientImpl)
+  protected readonly chePluginServiceClient: ChePluginServiceClientImpl;
+
+  @postConstruct()
+  onStart() {
+    this.preferenceService.onPreferenceChanged(async (event: PreferenceChange) => {
+      debounce(async () => {
+        if (!event.newValue) {
+          return;
+        }
+        const name = Object.keys(event.newValue)[0];
+        const uri = event.newValue[name];
+        if (event.preferenceName === 'chePlugins.repositories' && this.uriPattern.test(uri)) {
+          await this.initDefaults();
+          this.addRegistry({ name, uri });
+        }
+      }, 5000)();
+    });
+    this.chePluginServiceClient.onInvalidRegistryFound(registry => {
+      this.messageService.warn(`Invalid registry with name ${registry.name} and url: ${registry.uri} was added`);
+    });
+  }
 
   /********************************************************************************
    * Changing the Workspace Configuration

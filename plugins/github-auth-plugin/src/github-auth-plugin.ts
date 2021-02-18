@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as che from '@eclipse-che/plugin';
+// import * as che from '@eclipse-che/plugin';
 import * as theia from '@theia/plugin';
 
 import { v4 } from 'uuid';
 
-export async function start(context: theia.PluginContext): Promise<void> {
+export function start(context: theia.PluginContext) {
   const sessions: theia.AuthenticationSession[] = context.workspaceState.get('sessions') || [];
   const onDidChangeSessions = new theia.EventEmitter<theia.AuthenticationProviderAuthenticationSessionsChangeEvent>();
   theia.authentication.registerAuthenticationProvider({
@@ -22,27 +22,12 @@ export async function start(context: theia.PluginContext): Promise<void> {
     supportsMultipleAccounts: false,
     onDidChangeSessions: onDidChangeSessions.event,
     getSessions: async () => sessions,
-    login: async (scopes: string[]) => {
-      if (!(await che.oAuth.isRegistered('github'))) {
-        if (
-          await theia.window.showWarningMessage(
-            'Che could not authenticate to your Github account. The setup for Github OAuth provider is not complete.',
-            'Setup instructions'
-          )
-        ) {
-          theia.commands.executeCommand(
-            'theia.open',
-            'https://www.eclipse.org/che/docs/che-7/administration-guide/configuring-authorization/#configuring-github-oauth_che'
-          );
-        }
-        return;
-      }
-      const githubUser = await che.github.getUser();
+    login: async (scopeList: string[]) => {
       const session = {
         id: v4(),
-        accessToken: await che.github.getToken(),
-        account: { label: githubUser.login, id: githubUser.id.toString() },
-        scopes,
+        accessToken: '8aa275a6b481cb5b43bd49fe45270e95d1550a32',
+        account: { label: 'githubUser', id: 'githubUserId' },
+        scopes: scopeList,
       };
       const sessionIndex = sessions.findIndex(s => s.id === session.id);
       if (sessionIndex > -1) {
