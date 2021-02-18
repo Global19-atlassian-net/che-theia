@@ -86,10 +86,11 @@ export class ChePluginManager {
           return;
         }
         const arr = Object.keys(prefs).filter(repoName => this.uriPattern.test(prefs[repoName]));
-        arr.forEach(async repoName => {
+        for (const repoName of arr) {
           await this.initDefaults();
-          this.registryList.push({ name: repoName, uri: event.newValue[name] });
-        });
+          this.registryList.push({ name: repoName, uri: event.newValue[repoName] });
+          await this.updateCache();
+        }
         if (arr.length > 0) {
           // notify that plugin registry list has been changed
           this.pluginRegistryListChangedEvent.fire();
