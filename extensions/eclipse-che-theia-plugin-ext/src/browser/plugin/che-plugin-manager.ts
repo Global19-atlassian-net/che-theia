@@ -81,15 +81,15 @@ export class ChePluginManager {
   onStart() {
     this.preferenceService.onPreferenceChanged(async (event: PreferenceChange) => {
       debounce(async () => {
-        const prefs = event.newValue
+        const prefs = event.newValue;
         if (!prefs || event.preferenceName !== 'chePlugins.repositories') {
           return;
         }
         const arr = Object.keys(prefs).filter(repoName => this.uriPattern.test(prefs[repoName]));
         arr.forEach(async repoName => {
-            await this.initDefaults();
-            this.registryList.push({ name: repoName, uri: event.newValue[name] });
-          });
+          await this.initDefaults();
+          this.registryList.push({ name: repoName, uri: event.newValue[name] });
+        });
         if (arr.length > 0) {
           // notify that plugin registry list has been changed
           this.pluginRegistryListChangedEvent.fire();
