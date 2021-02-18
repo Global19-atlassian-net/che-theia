@@ -27,6 +27,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginFilter } from '../../common/plugin/plugin-filter';
 import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { WorkspaceService } from '@eclipse-che/theia-remote-api/lib/common/workspace-service';
+
 import debounce = require('lodash.debounce');
 
 @injectable()
@@ -87,7 +88,9 @@ export class ChePluginManager {
         const uri = event.newValue[name];
         if (event.preferenceName === 'chePlugins.repositories' && this.uriPattern.test(uri)) {
           await this.initDefaults();
-          this.addRegistry({ name, uri });
+          this.registryList.push({ name, uri });
+          // notify that plugin registry list has been changed
+          this.pluginRegistryListChangedEvent.fire();
         }
       }, 5000)();
     });
